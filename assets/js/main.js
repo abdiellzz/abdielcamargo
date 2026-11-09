@@ -1,16 +1,14 @@
 /* ==========================================================================
    Abdiel Camargo — Portafolio
-   Interacciones: navegación, terminal, animaciones y contacto
+   Interacciones: navegación, terminal, galería de capturas y contacto
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
    1. CONFIGURACIÓN RÁPIDA
-   Cambia aquí tu correo / WhatsApp. Si los dejas vacíos, los botones
-   correspondientes se ocultan automáticamente.
    -------------------------------------------------------------------------- */
 const SITE = {
-  email: '',          // Ej: "contacto@abdielcamargo.com"
-  whatsapp: ''        // Ej: "50761234567" (sin +, sin espacios)
+  email: 'camargoabdiel015@gmail.com',
+  whatsapp: '50767862691'   // sin +, sin espacios, sin guiones
 };
 
 (function () {
@@ -79,10 +77,6 @@ const SITE = {
 
     $$('a', mobileMenu).forEach((link) => link.addEventListener('click', closeMenu));
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeMenu();
-    });
-
     window.addEventListener('resize', () => {
       if (window.innerWidth > 860) closeMenu();
     });
@@ -96,7 +90,6 @@ const SITE = {
   if (reduceMotion || !('IntersectionObserver' in window)) {
     revealItems.forEach((el) => el.classList.add('is-visible'));
   } else {
-    // Pequeño escalonado dentro de un mismo bloque
     const groups = new Map();
     revealItems.forEach((el) => {
       const parent = el.parentElement;
@@ -119,9 +112,8 @@ const SITE = {
   /* ------------------------------------------------------------------------
      Enlace activo según la sección visible
      ------------------------------------------------------------------------ */
-  const sectionIds = ['sobre', 'stack', 'proyectos', 'trayectoria'];
   const navAnchors = $$('.nav-links a');
-  const sections = sectionIds
+  const sections = ['sobre', 'stack', 'proyectos', 'trayectoria']
     .map((id) => document.getElementById(id))
     .filter(Boolean);
 
@@ -155,11 +147,11 @@ const SITE = {
 
   const TERMINAL_LINES = [
     { type: 'cmd', text: 'whoami' },
-    { type: 'out', html: 'abdiel_camargo · <span class="hl">asistente de sistemas</span>' },
+    { type: 'out', html: 'abdiel_camargo · <span class="hl">sistemas + desarrollo</span>' },
     { type: 'cmd', text: 'cat enfoque.txt' },
-    { type: 'out', html: 'desarrollo web · soporte IT · <span class="hl">ciberseguridad</span>' },
+    { type: 'out', html: 'web · IA aplicada · <span class="hl">ciberseguridad</span>' },
     { type: 'cmd', text: 'ls proyectos/' },
-    { type: 'out', html: '<span class="ok">apex-crm/</span>  <span class="ok">inventario-udi/</span>' },
+    { type: 'out', html: '<span class="ok">faction-vault/</span> <span class="ok">iamed/</span> <span class="ok">allen/</span>' },
     { type: 'cmd', text: 'status --now' },
     { type: 'out', html: 'aprendiendo · construyendo · iterando' }
   ];
@@ -214,7 +206,7 @@ const SITE = {
           cmd.textContent += char;
           await sleep(34 + Math.random() * 40);
         }
-        removeCursors();
+        caret.remove();
         addCursor(line);
         await sleep(260);
       } else {
@@ -227,7 +219,6 @@ const SITE = {
   }
 
   if (terminal) {
-    // La terminal arranca cuando el hero es visible
     if ('IntersectionObserver' in window) {
       const terminalObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach((entry) => {
@@ -277,21 +268,87 @@ const SITE = {
   }
 
   /* ------------------------------------------------------------------------
-     Correo y WhatsApp opcionales
+     Visor de capturas (lightbox)
      ------------------------------------------------------------------------ */
-  const emailBtn = $('[data-email-btn]');
-  const emailLabel = $('[data-email-label]');
+  const shots = $$('.shot[data-full]');
+  const lightbox = $('[data-lightbox]');
+  const lbImg = $('[data-lb-img]');
+  const lbCap = $('[data-lb-caption]');
+  const lbCounter = $('[data-lb-counter]');
+  const lbClose = $('[data-lb-close]');
+  const lbPrev = $('[data-lb-prev]');
+  const lbNext = $('[data-lb-next]');
+  let currentShot = 0;
+  let lastFocused = null;
+
+  function showShot(index) {
+    if (!shots.length) return;
+    currentShot = (index + shots.length) % shots.length;
+    const shot = shots[currentShot];
+    const img = shot.querySelector('img');
+    lbImg.src = shot.dataset.full;
+    lbImg.alt = img ? img.alt : '';
+    if (lbCap) lbCap.textContent = shot.dataset.caption || '';
+    if (lbCounter) lbCounter.textContent = (currentShot + 1) + ' / ' + shots.length;
+  }
+
+  function openLightbox(index) {
+    if (!lightbox) return;
+    lastFocused = shots[index];
+    showShot(index);
+    lightbox.hidden = false;
+    document.documentElement.classList.add('is-locked');
+    if (lbClose) lbClose.focus({ preventScroll: true });
+  }
+
+  function closeLightbox() {
+    if (!lightbox) return;
+    lightbox.hidden = true;
+    document.documentElement.classList.remove('is-locked');
+    if (lastFocused) lastFocused.focus({ preventScroll: true });
+  }
+
+  if (lightbox) {
+    shots.forEach((shot, index) => {
+      shot.addEventListener('click', () => openLightbox(index));
+    });
+
+    if (lbClose) lbClose.addEventListener('click', closeLightbox);
+    if (lbPrev) lbPrev.addEventListener('click', () => showShot(currentShot - 1));
+    if (lbNext) lbNext.addEventListener('click', () => showShot(currentShot + 1));
+
+    lightbox.addEventListener('click', (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (lightbox.hidden) {
+        if (event.key === 'Escape') closeMenu();
+        return;
+      }
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowRight') showShot(currentShot + 1);
+      if (event.key === 'ArrowLeft') showShot(currentShot - 1);
+    });
+
+    // Deslizar en móvil
+    let touchStartX = null;
+    lightbox.addEventListener('touchstart', (event) => {
+      touchStartX = event.changedTouches[0].clientX;
+    }, { passive: true });
+    lightbox.addEventListener('touchend', (event) => {
+      if (touchStartX === null) return;
+      const delta = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(delta) > 55) showShot(currentShot + (delta < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive: true });
+  }
+
+  /* ------------------------------------------------------------------------
+     Copiar correo
+     ------------------------------------------------------------------------ */
   const copyBtn = $('[data-copy-email]');
   const copyLabel = $('[data-copy-label]');
-
-  if (SITE.email) {
-    if (emailBtn) {
-      emailBtn.href = 'mailto:' + SITE.email + '?subject=Hola%20Abdiel%20%E2%80%94%20desde%20tu%20portafolio';
-      emailBtn.hidden = false;
-    }
-    if (emailLabel) emailLabel.textContent = SITE.email;
-    if (copyBtn) copyBtn.hidden = false;
-  }
 
   if (copyBtn && SITE.email) {
     copyBtn.addEventListener('click', async () => {
@@ -307,16 +364,5 @@ const SITE = {
         copyBtn.classList.remove('is-copied');
       }, 2200);
     });
-  }
-
-  if (SITE.whatsapp) {
-    const wa = document.createElement('a');
-    wa.className = 'btn btn-ghost';
-    wa.href = 'https://wa.me/' + SITE.whatsapp;
-    wa.target = '_blank';
-    wa.rel = 'noopener';
-    wa.textContent = 'WhatsApp';
-    const actions = $('.contact-actions');
-    if (actions) actions.appendChild(wa);
   }
 })();
